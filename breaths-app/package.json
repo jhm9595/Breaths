@@ -1,0 +1,13 @@
+{
+  "name": "breaths-app",
+  "version": "1.0.0",
+  "description": "Breaths Intelligence & Trends Dashboard System",
+  "type": "module",
+  "main": "server.mjs",
+  "scripts": {
+    "start": "node server.mjs"
+  },
+  "keywords": ["breaths", "trends", "dashboard", "threads", "intelligence"],
+  "author": "Breaths",
+  "license": "ISC"
+}

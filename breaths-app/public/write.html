@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Breaths - Smart Editor (스마트 에디터)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pretendard/1.3.9/static/pretendard.css">
+  <style>
+    body {
+      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+      background-color: #f8fafc;
+      color: #0f172a;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #f1f5f9;
+      border-radius: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+    textarea:focus {
+      outline: none;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col antialiased selection:bg-black selection:text-white pb-24">
+
+  <!-- 상단 네비게이션 헤더 -->
+  <header class="bg-white border-b border-neutral-200 sticky top-0 z-30 px-5 py-3.5 flex items-center justify-between shadow-xs">
+    <div class="flex items-center gap-4">
+      <a href="/" class="p-2 hover:bg-neutral-100 rounded-xl transition-colors flex items-center gap-1.5 text-xs font-bold text-neutral-600">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"></path>
+        </svg>
+        <span>대시보드로 돌아가기</span>
+      </a>
+
+      <div class="h-4 w-[1px] bg-neutral-200"></div>
+
+      <div class="flex items-center gap-2">
+        <div class="w-7 h-7 rounded-lg bg-black text-white flex items-center justify-center font-black text-sm">B</div>
+        <span class="text-sm font-black tracking-tight">Breaths 스마트 에디터</span>
+      </div>
+    </div>
+
+    <!-- 계정 및 페르소나 선택기 & 멀티에디터 전환 -->
+    <div class="flex items-center gap-3">
+      <a href="/smart-multi-write" class="px-3.5 py-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-xs font-black text-indigo-700 transition-colors flex items-center gap-1.5 shadow-2xs">
+        <span>⚡ 스마트 멀티에디터로 전환</span>
+        <span class="text-[9px] bg-indigo-600 text-white px-1.5 py-0.2 rounded font-bold">다계정</span>
+      </a>
+
+      <!-- 연동 계정 -->
+      <div class="flex items-center gap-1.5 bg-neutral-50 border border-neutral-200 px-3 py-1.5 rounded-xl">
+        <span class="text-[10px] text-neutral-400 font-bold uppercase">발행 계정:</span>
+        <select id="accountSelect" class="bg-transparent text-xs font-bold text-neutral-800 outline-none cursor-pointer">
+          <option value="acc_1">@breaths_official</option>
+          <option value="acc_2">@trend_daily_kr</option>
+        </select>
+      </div>
+
+      <!-- 페르소나 -->
+      <div class="flex items-center gap-1.5 bg-neutral-50 border border-neutral-200 px-3 py-1.5 rounded-xl">
+        <span class="text-[10px] text-neutral-400 font-bold uppercase">페르소나:</span>
+        <select id="personaSelect" class="bg-transparent text-xs font-bold text-neutral-800 outline-none cursor-pointer">
+          <option value="p_1">🔥 트렌드 얼리어답터</option>
+          <option value="p_2">📌 냉철한 분석가</option>
+          <option value="p_3">💡 수익화 큐레이터</option>
+        </select>
+      </div>
+    </div>
+  </header>
+
+  <!-- 메인 에디터 컨테이너 -->
+  <main class="flex-1 max-w-4xl mx-auto w-full p-4 md:p-8 flex flex-col gap-6">
+
+    <!-- 모드 선택 탭 & 현재 키워드 안내 -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-4 border border-neutral-200 rounded-[20px] shadow-xs">
+      <div class="flex items-center gap-1.5 overflow-x-auto custom-scrollbar pb-1 md:pb-0">
+        <button onclick="changeMode('realtime')" id="mode-btn-realtime" class="mode-tab px-3.5 py-2 rounded-xl text-xs font-black transition-all bg-black text-white shadow-xs">
+          ⚡ 간편 글
+        </button>
+        <button onclick="changeMode('general')" id="mode-btn-general" class="mode-tab px-3.5 py-2 rounded-xl text-xs font-black transition-all bg-neutral-100 text-neutral-600 hover:text-black">
+          📝 전문성 글
+        </button>
+        <button onclick="changeMode('coupang')" id="mode-btn-coupang" class="mode-tab px-3.5 py-2 rounded-xl text-xs font-black transition-all bg-neutral-100 text-neutral-600 hover:text-black flex items-center gap-1">
+          <span>📦 쿠팡</span>
+          <span class="text-[9px] bg-red-100 text-red-600 px-1 py-0.2 rounded font-bold">수익화</span>
+        </button>
+        <button onclick="changeMode('toss')" id="mode-btn-toss" class="mode-tab px-3.5 py-2 rounded-xl text-xs font-black transition-all bg-neutral-100 text-neutral-600 hover:text-black flex items-center gap-1">
+          <span>🔵 토스쇼핑</span>
+          <span class="text-[9px] bg-blue-100 text-blue-600 px-1 py-0.2 rounded font-bold">쉐어링크</span>
+        </button>
+        <button onclick="changeMode('shopping')" id="mode-btn-shopping" class="mode-tab px-3.5 py-2 rounded-xl text-xs font-black transition-all bg-neutral-100 text-neutral-600 hover:text-black">
+          🛍️ 쇼핑 커넥트
+        </button>
+      </div>
+
+      <!-- 선택된 타겟 키워드 인풋 -->
+      <div class="flex items-center gap-2">
+        <span class="text-[11px] font-bold text-neutral-500 whitespace-nowrap">키워드:</span>
+        <input 
+          type="text" 
+          id="keywordInput" 
+          placeholder="주제 또는 키워드 입력" 
+          class="bg-neutral-50 border border-neutral-200 text-xs font-bold px-3 py-1.5 rounded-xl outline-none focus:border-black w-40 md:w-52"
+        >
+      </div>
+    </div>
+
+    <!-- 실시간 트렌드 칩 바 (스마트 멀티에디터 연동 기능 업그레이드) -->
+    <div class="bg-white border border-neutral-200 p-4 rounded-[20px] shadow-xs flex flex-col gap-2">
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-black text-neutral-800 flex items-center gap-1.5">
+          <span>⚡</span>
+          <span>원클릭 실시간 트렌드 소싱 키워드</span>
+        </span>
+        <span class="text-[10px] text-neutral-400 font-medium">클릭 시 해당 키워드로 타래 초벌이 즉시 생성됩니다.</span>
+      </div>
+      <div id="quickKeywordsBar" class="flex items-center gap-1.5 overflow-x-auto custom-scrollbar pb-1"></div>
+    </div>
+
+    <!-- AI 스마트 어시스턴트 컨트롤 바 -->
+    <div class="bg-gradient-to-r from-indigo-50/70 via-white to-purple-50/70 border border-indigo-100 p-5 rounded-[24px] flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-sm">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-2xl bg-indigo-600 text-white flex items-center justify-center font-black text-lg shadow-sm">
+          ✨
+        </div>
+        <div>
+          <h3 class="text-sm font-black text-indigo-950">AI 초벌 생성 & 타래 최적화</h3>
+          <p class="text-[11px] text-neutral-500 font-medium">선택된 모드와 페르소나 어투에 맞춰 1~3타래를 자동으로 생성합니다.</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2.5 w-full md:w-auto">
+        <button onclick="generateAiContent()" id="aiGenBtn" class="flex-1 md:flex-initial px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs flex items-center justify-center gap-1.5 shadow-md shadow-indigo-200/50 transition-all cursor-pointer">
+          <span>🤖 AI 초벌 자동 생성</span>
+        </button>
+        <button onclick="enhanceHook()" class="px-3.5 py-2.5 rounded-xl bg-white border border-neutral-200 hover:border-black text-neutral-800 font-bold text-xs transition-colors cursor-pointer">
+          💡 후킹 강화
+        </button>
+      </div>
+    </div>
+
+    <!-- 쿠팡/제휴 상품 검색 패널 (쿠팡/토스 모드 선택 시 노출) -->
+    <div id="affiliatePanel" class="hidden bg-white border border-neutral-200 p-5 rounded-[24px] flex flex-col gap-4 shadow-xs">
+      <div class="flex items-center justify-between border-b border-neutral-100 pb-3">
+        <h4 class="text-xs font-black flex items-center gap-1.5 text-neutral-900">
+          <span id="affiliateIcon">📦</span>
+          <span id="affiliateTitle">쿠팡 파트너스 상품 연동</span>
+        </h4>
+        <span class="text-[10px] text-neutral-400">타래에 클릭 한 번으로 제휴 딥링크가 삽입됩니다.</span>
+      </div>
+
+      <div class="flex gap-2">
+        <input 
+          type="text" 
+          id="affiliateSearchInput" 
+          placeholder="추천할 상품명 검색 (예: 경량패딩, 무선이어폰)" 
+          class="flex-1 bg-neutral-50 border border-neutral-200 text-xs font-medium px-4 py-2 rounded-xl outline-none focus:border-black"
+        >
+        <button onclick="searchAffiliateProducts()" class="bg-black hover:bg-neutral-800 text-white text-xs font-bold px-4 py-2 rounded-xl transition-colors">
+          검색
+        </button>
+      </div>
+
+      <div id="affiliateProductsList" class="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-56 overflow-y-auto custom-scrollbar"></div>
+    </div>
+
+    <!-- 타래(Thread) 목록 편집 영역 -->
+    <div id="threadsContainer" class="flex flex-col gap-4">
+      <!-- 타래 카드들이 동적으로 추가됨 -->
+    </div>
+
+    <!-- 타래 추가 버튼 -->
+    <button onclick="addThreadCard()" class="w-full py-4 border-2 border-dashed border-neutral-300 hover:border-black hover:bg-neutral-50 rounded-[20px] text-xs font-black text-neutral-500 hover:text-black transition-all flex items-center justify-center gap-2 cursor-pointer">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path>
+      </svg>
+      <span>+ 다음 타래 추가 (Thread Post)</span>
+    </button>
+
+  </main>
+
+  <!-- 하단 고정 액션 바 -->
+  <footer class="fixed bottom-0 left-0 right-0 bg-white border-t border-neutral-200 px-6 py-3.5 z-40 shadow-lg flex items-center justify-between">
+    <div class="flex items-center gap-2">
+      <button onclick="saveDraft()" class="px-4 py-2.5 rounded-xl border border-neutral-200 hover:border-black text-neutral-700 hover:text-black text-xs font-bold transition-colors">
+        💾 임시 저장
+      </button>
+      <span id="draftStatusText" class="text-[11px] text-neutral-400 font-mono hidden">저장됨</span>
+    </div>
+
+    <div class="flex items-center gap-3">
+      <!-- 예약 발행 버튼 -->
+      <button onclick="openScheduleModal()" class="px-4 py-2.5 rounded-xl border border-neutral-200 hover:border-indigo-600 text-neutral-700 hover:text-indigo-600 text-xs font-bold transition-colors flex items-center gap-1.5">
+        <span>⏰</span>
+        <span>예약 발행</span>
+      </button>
+
+      <!-- 즉시 발행 버튼 -->
+      <button onclick="publishImmediately()" id="publishBtn" class="px-6 py-2.5 rounded-xl bg-black hover:bg-neutral-800 text-white text-xs font-black shadow-md transition-all flex items-center gap-2 cursor-pointer">
+        <span>🚀 스레드 즉시 발행</span>
+      </button>
+    </div>
+  </footer>
+
+  <!-- 예약 발행 팝업 모달 -->
+  <div id="scheduleModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
+    <div class="bg-white rounded-[24px] p-6 max-w-sm w-full flex flex-col gap-4 shadow-xl" onclick="event.stopPropagation()">
+      <h3 class="text-sm font-black text-neutral-900">⏰ 스레드 예약 시간 설정</h3>
+      <p class="text-xs text-neutral-500">지정한 시각에 설정된 순서대로 스레드가 자동 발행됩니다.</p>
+      
+      <input type="datetime-local" id="scheduleDatetime" class="bg-neutral-50 border border-neutral-200 text-xs font-bold p-3 rounded-xl outline-none focus:border-black">
+
+      <div class="flex justify-end gap-2 pt-2">
+        <button onclick="closeScheduleModal()" class="px-3.5 py-2 rounded-xl text-xs font-bold text-neutral-500 hover:bg-neutral-100">취소</button>
+        <button onclick="confirmSchedule()" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black">예약 등록</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 토스트 알림 -->
+  <div id="toast" class="fixed bottom-20 right-6 z-50 hidden bg-neutral-900 text-white px-5 py-3.5 rounded-2xl shadow-xl flex items-center gap-3 text-xs font-bold transition-all">
+    <span id="toastIcon">✨</span>
+    <span id="toastMessage">알림 내용</span>
+  </div>
+
+  <script>
+    let currentMode = 'realtime';
+    let threadList = [
+      { id: 1, content: '', media: [] },
+      { id: 2, content: '', media: [] }
+    ];
+
+    // 페이지 초기화
+    window.addEventListener('DOMContentLoaded', async () => {
+      // 실시간 키워드 로드
+      try {
+        const [rtRes, dlRes] = await Promise.all([
+          fetch('/api/trends/realtime').then(r => r.json()),
+          fetch('/api/trends/datalab').then(r => r.json())
+        ]);
+        const kws = Array.from(new Set([...(rtRes.keywords || []), ...((dlRes.datalab?.[0]?.keywords || []).slice(0, 10))]));
+        const bar = document.getElementById('quickKeywordsBar');
+        if (bar) {
+          bar.innerHTML = '';
+          kws.slice(0, 15).forEach((kw, i) => {
+            const btn = document.createElement('button');
+            btn.className = 'text-[10px] font-bold px-3 py-1.5 rounded-xl bg-neutral-100 hover:bg-black hover:text-white transition-colors cursor-pointer whitespace-nowrap shrink-0 shadow-2xs';
+            btn.innerText = `#${i + 1} ${kw}`;
+            btn.onclick = () => {
+              document.getElementById('keywordInput').value = kw;
+              document.getElementById('affiliateSearchInput').value = kw;
+              generateAiContent();
+            };
+            bar.appendChild(btn);
+          });
+        }
+      } catch (e) {
+        console.error(e);
+      }
+
+      // URL 파라미터 파싱
+      const params = new URLSearchParams(window.location.search);
+      const modeParam = params.get('mode');
+      const kwParam = params.get('keyword');
+      const sourceParam = params.get('source');
+
+      if (modeParam) changeMode(modeParam);
+      if (kwParam) {
+        document.getElementById('keywordInput').value = kwParam;
+        document.getElementById('affiliateSearchInput').value = kwParam;
+      }
+
+      // 만약 키워드가 있으면 자동으로 AI 초벌 생성을 호출
+      if (kwParam) {
+        generateAiContent();
+      } else {
+        renderThreads();
+      }
+    });
+
+    // 모드 변경
+    function changeMode(mode) {
+      currentMode = mode;
+      document.querySelectorAll('.mode-tab').forEach(b => {
+        b.className = 'mode-tab px-3.5 py-2 rounded-xl text-xs font-black transition-all bg-neutral-100 text-neutral-600 hover:text-black';
+      });
+      const activeBtn = document.getElementById('mode-btn-' + mode);
+      if (activeBtn) {
+        activeBtn.className = 'mode-tab px-3.5 py-2 rounded-xl text-xs font-black transition-all bg-black text-white shadow-xs';
+      }
+
+      const affPanel = document.getElementById('affiliatePanel');
+      if (mode === 'coupang' || mode === 'toss') {
+        affPanel.classList.remove('hidden');
+        document.getElementById('affiliateIcon').innerText = mode === 'coupang' ? '📦' : '🔵';
+        document.getElementById('affiliateTitle').innerText = mode === 'coupang' ? '쿠팡 파트너스 상품 연동' : '토스 쇼핑 쉐어링크 연동';
+        searchAffiliateProducts();
+      } else {
+        affPanel.classList.add('hidden');
+      }
+    }
+
+    // 타래 렌더링
+    function renderThreads() {
+      const container = document.getElementById('threadsContainer');
+      container.innerHTML = '';
+
+      threadList.forEach((t, idx) => {
+        const card = document.createElement('div');
+        card.className = 'bg-white border border-neutral-200 rounded-[24px] p-6 flex flex-col gap-4 shadow-xs relative group';
+        
+        card.innerHTML = `
+          <div class="flex items-center justify-between border-b border-neutral-100 pb-3">
+            <div class="flex items-center gap-2">
+              <span class="w-6 h-6 rounded-full bg-black text-white text-[11px] font-black flex items-center justify-center">
+                ${idx + 1}
+              </span>
+              <span class="text-xs font-black text-neutral-800">
+                ${idx === 0 ? '메인 스레드 (Post 1)' : `${idx + 1}번째 답글 타래`}
+              </span>
+              ${idx === 0 ? '<span class="text-[9px] bg-neutral-100 text-neutral-600 px-2 py-0.5 rounded-full font-bold">후킹 & 인트로</span>' : ''}
+              ${idx === threadList.length - 1 && threadList.length > 1 ? '<span class="text-[9px] bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-full font-bold">CTA / 제휴 링크</span>' : ''}
+            </div>
+
+            <div class="flex items-center gap-2">
+              <span id="char-count-${idx}" class="text-[11px] font-mono text-neutral-400 font-bold">
+                ${t.content.length} / 500
+              </span>
+              ${threadList.length > 1 ? `
+                <button onclick="removeThreadCard(${idx})" class="p-1 text-neutral-300 hover:text-red-500 transition-colors" title="타래 삭제">
+                  ✕
+                </button>
+              ` : ''}
+            </div>
+          </div>
+
+          <textarea 
+            id="thread-text-${idx}"
+            oninput="onThreadInput(${idx}, this.value)"
+            rows="5"
+            placeholder="${idx === 0 ? '독자의 시선을 사로잡을 핵심 후킹 문구와 첫 번째 내용을 작성하세요...' : '이어서 전달할 상세 내용 또는 링크 정보를 작성하세요...'}"
+            class="w-full bg-neutral-50/50 p-4 border border-neutral-200 rounded-xl text-xs font-medium leading-relaxed resize-y focus:border-black focus:bg-white transition-all"
+          >${t.content}</textarea>
+
+          <!-- 미디어 첨부 목록 -->
+          <div class="flex items-center justify-between text-xs pt-1">
+            <label class="flex items-center gap-1.5 text-neutral-500 hover:text-black cursor-pointer font-bold text-[11px]">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+              </svg>
+              <span>사진/동영상 첨부</span>
+              <input type="file" accept="image/*,video/*" class="hidden" onchange="handleMediaUpload(${idx}, event)">
+            </label>
+
+            <div id="media-preview-${idx}" class="flex gap-2">
+              ${(t.media || []).map(m => `<img src="${m}" class="w-10 h-10 object-cover rounded-lg border border-neutral-200">`).join('')}
+            </div>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function onThreadInput(idx, val) {
+      threadList[idx].content = val;
+      const counter = document.getElementById('char-count-' + idx);
+      if (counter) counter.innerText = `${val.length} / 500`;
+      if (val.length > 500) {
+        counter.className = 'text-[11px] font-mono text-red-500 font-bold';
+      } else {
+        counter.className = 'text-[11px] font-mono text-neutral-400 font-bold';
+      }
+    }
+
+    function addThreadCard() {
+      threadList.push({ id: Date.now(), content: '', media: [] });
+      renderThreads();
+    }
+
+    function removeThreadCard(idx) {
+      if (threadList.length <= 1) return;
+      threadList.splice(idx, 1);
+      renderThreads();
+    }
+
+    function handleMediaUpload(idx, e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const url = URL.createObjectURL(file);
+      threadList[idx].media = threadList[idx].media || [];
+      threadList[idx].media.push(url);
+      renderThreads();
+      showToast('📷', '미디어가 성공적으로 첨부되었습니다.');
+    }
+
+    // AI 초벌 자동 생성
+    async function generateAiContent() {
+      const kw = document.getElementById('keywordInput').value.trim();
+      const personaId = document.getElementById('personaSelect').value;
+      const btn = document.getElementById('aiGenBtn');
+      
+      btn.innerText = '⚡ AI 작성 중...';
+      btn.disabled = true;
+
+      try {
+        const res = await fetch('/api/ai/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            keyword: kw,
+            mode: currentMode,
+            personaId: personaId,
+            source: new URLSearchParams(window.location.search).get('source') || ''
+          })
+        });
+        const data = await res.json();
+        if (data.success && data.threads) {
+          threadList = data.threads;
+          renderThreads();
+          showToast('🤖', 'AI가 타래 초벌 작성을 완료했습니다!');
+        }
+      } catch (err) {
+        showToast('❌', 'AI 생성 중 오류가 발생했습니다.');
+      } finally {
+        btn.innerText = '🤖 AI 초벌 자동 생성';
+        btn.disabled = false;
+      }
+    }
+
+    function enhanceHook() {
+      if (threadList.length > 0) {
+        const original = threadList[0].content;
+        threadList[0].content = `🚨 "이걸 아직도 모르셨나요?"\n\n` + original;
+        renderThreads();
+        showToast('💡', '첫 번째 타래의 후킹 강도를 높였습니다!');
+      }
+    }
+
+    // 제휴 상품 검색
+    async function searchAffiliateProducts() {
+      const kw = document.getElementById('affiliateSearchInput').value.trim() || document.getElementById('keywordInput').value.trim() || '인기';
+      const list = document.getElementById('affiliateProductsList');
+      list.innerHTML = '<div class="col-span-full py-4 text-center text-xs text-neutral-400">상품 검색 중...</div>';
+
+      try {
+        const res = await fetch(`/api/coupang/search?keyword=${encodeURIComponent(kw)}`);
+        const data = await res.json();
+        list.innerHTML = '';
+        (data.products || []).forEach(p => {
+          const item = document.createElement('div');
+          item.className = 'border border-neutral-200 p-3 rounded-xl flex items-center justify-between gap-3 bg-neutral-50/60';
+          item.innerHTML = `
+            <img src="${p.imageUrl}" class="w-12 h-12 object-cover rounded-lg shrink-0">
+            <div class="flex-1 min-w-0">
+              <h5 class="text-xs font-bold text-neutral-800 truncate">${p.title}</h5>
+              <div class="flex items-center gap-2 mt-0.5">
+                <span class="text-xs font-black text-red-600">${p.price}</span>
+                <span class="text-[10px] text-neutral-400">평점 ★${p.rating}</span>
+              </div>
+            </div>
+            <button onclick="insertAffiliateLink('${p.title.replace(/'/g, "\\'")}', '${p.deeplink}')" class="px-2.5 py-1.5 bg-black hover:bg-neutral-800 text-white text-[10px] font-bold rounded-lg shrink-0 transition-colors">
+              타래 삽입
+            </button>
+          `;
+          list.appendChild(item);
+        });
+      } catch (err) {
+        list.innerHTML = '<div class="col-span-full py-4 text-center text-xs text-red-500">상품을 불러오지 못했습니다.</div>';
+      }
+    }
+
+    function insertAffiliateLink(title, link) {
+      const lastIdx = threadList.length - 1;
+      const text = `\n\n👉 추천 상품: ${title}\n구매 좌표: ${link}\n(이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.)`;
+      threadList[lastIdx].content += text;
+      renderThreads();
+      showToast('🔗', '마지막 타래에 제휴 상품 링크가 삽입되었습니다!');
+    }
+
+    // 임시 저장
+    async function saveDraft() {
+      try {
+        await fetch('/api/threads/drafts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            keyword: document.getElementById('keywordInput').value,
+            mode: currentMode,
+            threads: threadList
+          })
+        });
+        showToast('💾', '임시 저장이 완료되었습니다.');
+      } catch (e) {
+        showToast('❌', '임시 저장 실패');
+      }
+    }
+
+    // 즉시 발행
+    async function publishImmediately() {
+      const btn = document.getElementById('publishBtn');
+      btn.innerText = '🚀 발행 중...';
+      btn.disabled = true;
+
+      try {
+        const res = await fetch('/api/threads-manage/publish-single', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            account: document.getElementById('accountSelect').value,
+            threads: threadList
+          })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast('🎉', '스레드 타래가 성공적으로 발행되었습니다!');
+          setTimeout(() => {
+            window.location.href = '/';
+          }, 1500);
+        } else {
+          showToast('❌', data.error || '발행 실패');
+        }
+      } catch (e) {
+        showToast('❌', '네트워크 오류가 발생했습니다.');
+      } finally {
+        btn.innerText = '🚀 스레드 즉시 발행';
+        btn.disabled = false;
+      }
+    }
+
+    // 예약 발행
+    function openScheduleModal() {
+      // 기본값으로 30분 뒤 시간 세팅
+      const now = new Date(Date.now() + 30 * 60000);
+      now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+      document.getElementById('scheduleDatetime').value = now.toISOString().slice(0, 16);
+      document.getElementById('scheduleModal').classList.remove('hidden');
+    }
+
+    function closeScheduleModal() {
+      document.getElementById('scheduleModal').classList.add('hidden');
+    }
+
+    async function confirmSchedule() {
+      const datetime = document.getElementById('scheduleDatetime').value;
+      if (!datetime) return;
+
+      closeScheduleModal();
+      try {
+        const res = await fetch('/api/threads/schedule', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            scheduledAt: datetime,
+            account: document.getElementById('accountSelect').value,
+            threads: threadList
+          })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast('⏰', `스레드가 [${datetime}]에 예약되었습니다!`);
+          setTimeout(() => {
+            window.location.href = '/';
+          }, 1500);
+        }
+      } catch (e) {
+        showToast('❌', '예약 등록 실패');
+      }
+    }
+
+    function showToast(icon, message) {
+      const toast = document.getElementById('toast');
+      document.getElementById('toastIcon').innerText = icon;
+      document.getElementById('toastMessage').innerText = message;
+      toast.classList.remove('hidden');
+      setTimeout(() => {
+        toast.classList.add('hidden');
+      }, 3500);
+    }
+  </script>
+</body>
+</html>
